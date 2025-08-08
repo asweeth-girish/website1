@@ -1,0 +1,49 @@
+package org.example.controller;
+
+import org.example.entity.User;
+import org.example.service.UserService;
+import org.example.vo.UserVO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.awt.datatransfer.StringSelection;
+import java.util.Set;
+
+@RestController
+@CrossOrigin(origins = "http://localhost:4200")
+public class UserController {
+
+    @Autowired
+    private UserService userservice;
+
+    @PostMapping("/signup")
+    public ResponseEntity<String> createUser(@RequestBody UserVO uservo){
+        try {
+            Set<String> roles = Set.of("USER");
+            User user = userservice.createUser(uservo,roles);
+            return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully: " + user.getUsername());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody UserVO uservo) {
+        try {
+
+            String token = userservice.login(uservo);
+            return ResponseEntity.ok("Bearer "+token);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/private")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> privateEndpoint() {
+        return ResponseEntity.ok("You are authenticated and accessed a protected endpoint!");
+    }
+}
